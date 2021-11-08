@@ -3,9 +3,11 @@
 namespace EasyProductManager\Controller;
 
 use EasyProductManager\EasyProductManager;
+use EasyProductManager\Events\DataTableAddColumn;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Thelia\Controller\Admin\ProductController;
 use Thelia\Core\Event\Image\ImageEvent;
@@ -58,6 +60,10 @@ class BackController extends ProductController
             return $response;
         }
 
+        //todo l'event qui permet d'ajouter une colonne (nom + rang)
+        $eventColumn = new DataTableAddColumn([]);
+        $this->getDispatcher()->dispatch(DataTableAddColumn::PRODUCT_DATATABLE_ADD_COLUMN,$eventColumn);
+
         if ($request->isXmlHttpRequest()) {
             /** @var Lang $lang */
             $lang = $this->getLang($request);
@@ -108,6 +114,8 @@ class BackController extends ProductController
                 ->withColumn('quantitySubQuery.quantity', 'quantity')
                 ->where('quantitySubQuery.product_id = ' . ProductTableMap::ID)
             ;
+
+            //todo event qui permet de récupérer les data de la colonne
 
             // Jointure product sale element
             $query->useProductSaleElementsQuery()
