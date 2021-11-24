@@ -308,6 +308,131 @@
             var popoverPosition = null,
                 $modalDelete = $module.find('#product_delete_dialog');
 
+            var getInterval = (start, end) => {
+                return Array(end - start + 1).fill().map((_, idx) => start + idx)
+            }
+
+            var compteur = {$compteur};
+            var newCol = {$newCol};
+            var columnDefs = {$columnsDefinition|@json_encode nofilter};
+
+            var getCompteur = () => {
+                if (compteur <= 0){
+                    return compteur
+                }
+
+                return {$compteur+1}
+            }
+
+            columnDefs = columnDefs.concat([
+                {
+                    targets: [0,1],
+                    responsivePriority: 4
+                },
+                {
+                    className: "text-center",
+                    targets: 1,
+                    render: function ( data, type, row, meta ) {
+                        var href = row[9] + '&current_tab=images';
+
+                        if (data !== '') {
+                            return '<a href="' + href + '"><img src="' + data + '" style="width: 50px; height: 50px;" /></a>'
+                        }
+
+                        return '<a href="' + href + '" style="line-height:50px;text-align:center;width: 50px; height: 50px;">Aucune</a>';
+                    }
+                },
+                {
+                    targets: [0, 2, 3],
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="' + row[9] + '">' + data + '</a>'
+                    }
+                },
+                {
+                    className: "text-center",
+                    targets: 4,
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="#" class="js-edit-price">' + data[0] + ' HT</a>'
+                            + '<br/>'
+                            + '<a href="#" class="js-edit-price">' + data[1] + ' TTC</a>';
+                    },
+                    responsivePriority: 3
+                },
+                {
+                    className: "text-center",
+                    targets: 5,
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="#" class="js-edit-price">' + data[0] + ' HT</a>'
+                            + '<br/>'
+                            + '<a href="#" class="js-edit-price">' + data[1] + ' TTC</a>';
+                    },
+                    createdCell: function(td, cellData, rowData, row, col) {
+                        if (parseInt(cellData[2])) {
+                            td.style.backgroundColor = 'rgba(255, 128, 0,0.1)';
+                        }
+                    }
+                },
+                {
+                    className: "text-center",
+                    targets: 6,
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="#" class="js-edit-quantity">' + data + '</a>';
+                    },
+                    createdCell: function(td, cellData, rowData, row, col) {
+                        td.style.backgroundColor = parseInt(cellData) ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
+                    }
+                },
+                {
+                    className: "text-center",
+                    targets: 7,
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="#" class="js-action-position-up"><i class="glyphicon glyphicon-arrow-up"></i></a>' +
+                            '&nbsp;&nbsp;<a href="#" class="js-action-position">' + data + '</a>&nbsp;&nbsp;' +
+                            '<a href="#" class="js-action-position-down"><i class="glyphicon glyphicon-arrow-down"></i></a>';
+                    },
+                    visible: false
+                },
+                {
+                    className: "text-center",
+                    targets: 8,
+                    render: function ( data, type, row, meta ) {
+                        return '<select class="js-action-visible">' +
+                            '<option ' + (parseInt(data) === 1 ? 'selected' : '') + ' value="1">Oui</option>' +
+                            '<option ' + (parseInt(data) === 0 ? 'selected' : '') + ' value="0">Non</option>' +
+                            '</select>';
+                    },
+                    createdCell: function(td, cellData, rowData, row, col) {
+                        td.style.backgroundColor = parseInt(cellData) ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
+                    }
+                }
+            ])
+
+            if (newCol){
+                {*todo boucle ajout colonne*}
+                columnDefs = columnDefs.concat( [
+                    {
+                        targets: getInterval(9,{$compteur}),
+                        render: function (data, type, row, meta) {
+                            return '<a href="' + row[9] + '">' + data + '</a>'
+                        }
+                    }
+                ])
+            }
+
+            columnDefs = columnDefs.concat([
+                {
+                    className: "text-right",
+                    targets: getCompteur(),
+                    render: function ( data, type, row, meta ) {
+                        return '<a href="' + data + '" class="btn btn-primary" title="Voir">' +
+                            '<i class="glyphicon glyphicon-eye-open"></i>' +
+                            '</a>' +
+                            ' <a href="' + data + '" class="btn btn-danger js-action-delete" title="Supprimer" data-id="' + row[0] + '">' +
+                            '<i class="glyphicon glyphicon-trash"></i>' +
+                            '</a>';
+                    }
+                }
+            ])
 
             var table = $module.find('.js-list').DataTable( {
                 processing: true,
@@ -322,6 +447,7 @@
                     ajax: "{url current=true}",
                     method: 'POST',
                     data: function (data) {
+
                         resetPopoverPosition();
 
                         data.filter = {
@@ -350,100 +476,7 @@
                     }
                 },
                 displayLength: 25,
-                columnDefs: {$columnsDefinition|@json_encode nofilter}.concat([
-                    {
-                        targets: [0,1],
-                        responsivePriority: 4
-                    },
-                    {
-                        className: "text-center",
-                        targets: 1,
-                        render: function ( data, type, row, meta ) {
-                            var href = row[9] + '&current_tab=images';
-
-                            if (data !== '') {
-                                return '<a href="' + href + '"><img src="' + data + '" style="width: 50px; height: 50px;" /></a>'
-                            }
-
-                            return '<a href="' + href + '" style="line-height:50px;text-align:center;width: 50px; height: 50px;">Aucune</a>';
-                        }
-                    },
-                    {
-                        targets: [0, 2, 3],
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="' + row[9] + '">' + data + '</a>'
-                        }
-                    },
-                    {
-                        className: "text-center",
-                        targets: 4,
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="#" class="js-edit-price">' + data[0] + ' HT</a>'
-                            + '<br/>'
-                            + '<a href="#" class="js-edit-price">' + data[1] + ' TTC</a>';
-                        },
-                        responsivePriority: 3
-                    },
-                    {
-                        className: "text-center",
-                        targets: 5,
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="#" class="js-edit-price">' + data[0] + ' HT</a>'
-                                + '<br/>'
-                                + '<a href="#" class="js-edit-price">' + data[1] + ' TTC</a>';
-                        },
-                        createdCell: function(td, cellData, rowData, row, col) {
-                            if (parseInt(cellData[2])) {
-                                td.style.backgroundColor = 'rgba(255, 128, 0,0.1)';
-                            }
-                        }
-                    },
-                    {
-                        className: "text-center",
-                        targets: 6,
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="#" class="js-edit-quantity">' + data + '</a>';
-                        },
-                        createdCell: function(td, cellData, rowData, row, col) {
-                            td.style.backgroundColor = parseInt(cellData) ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
-                        }
-                    },
-                    {
-                        className: "text-center",
-                        targets: 7,
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="#" class="js-action-position-up"><i class="glyphicon glyphicon-arrow-up"></i></a>' +
-                                '&nbsp;&nbsp;<a href="#" class="js-action-position">' + data + '</a>&nbsp;&nbsp;' +
-                                '<a href="#" class="js-action-position-down"><i class="glyphicon glyphicon-arrow-down"></i></a>';
-                        },
-                        visible: false
-                    },
-                    {
-                        className: "text-center",
-                        targets: 8,
-                        render: function ( data, type, row, meta ) {
-                            return '<select class="js-action-visible">' +
-                                '<option ' + (parseInt(data) === 1 ? 'selected' : '') + ' value="1">Oui</option>' +
-                                '<option ' + (parseInt(data) === 0 ? 'selected' : '') + ' value="0">Non</option>' +
-                                '</select>';
-                        },
-                        createdCell: function(td, cellData, rowData, row, col) {
-                            td.style.backgroundColor = parseInt(cellData) ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
-                        }
-                    },
-                    {
-                        className: "text-right",
-                        targets: 9,
-                        render: function ( data, type, row, meta ) {
-                            return '<a href="' + data + '" class="btn btn-primary" title="Voir">' +
-                                '<i class="glyphicon glyphicon-eye-open"></i>' +
-                                '</a>' +
-                                ' <a href="' + data + '" class="btn btn-danger js-action-delete" title="Supprimer" data-id="' + row[0] + '">' +
-                                '<i class="glyphicon glyphicon-trash"></i>' +
-                                '</a>';
-                        }
-                    }
-            ]),
+                columnDefs: columnDefs,
                 language: {
                 "sProcessing":     "Traitement en cours...",
                     "sSearch":         "Rechercher&nbsp;:",

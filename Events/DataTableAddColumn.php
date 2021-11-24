@@ -7,30 +7,85 @@ use Thelia\Core\Event\ActionEvent;
 class DataTableAddColumn extends ActionEvent
 {
     public const PRODUCT_DATATABLE_ADD_COLUMN = "product.manager.add.column";
+
     /**
      * @var array
      */
-    private $data;
+    private $columns;
 
-    public function __construct(array $data)
+    /** @var int $compteur */
+    private $compteur = 3;
+
+    public function __construct()
     {
-        $this->data = $data;
     }
 
     /**
-     * @return array
+     * @return array|null
      */
-    public function getData(): array
+    public function getColumns(): ?array
     {
-        return $this->data;
+        return $this->columns;
     }
 
     /**
-     * @param array $data
+     * @return int
      */
-    public function setData(array $data): void
+    public function getNewColumns(): int
     {
-        $this->data = $data;
+        return $this->getColumns() ? count($this->getColumns()): 0;
+    }
+
+    /**
+     * DataTable parameters :
+     * [['name'=> 'name','title'=> 'title','orderable'=> false,'searchable'=> false],...]
+     *
+     * @param array $columns
+     */
+    protected function setColumns(array $columns): void
+    {
+        $this->columns = $columns;
+    }
+
+    /**
+     * @param array $column
+     */
+    public function addColumn(array $column): void
+    {
+        $this->columns[] = $column;
+        $return = [] ;
+        foreach ($this->getColumns() as $key=>$data){
+            $name = $data['title'] ? trim(strtolower($data['title'])) : null;
+            $return[$name??$key] = [
+                'name'=> $name ?? null,
+                'title'=> $data['title'] ?? null,
+                'orderable'=> $data['orderable'] ?? null,
+                'searchable'=> $data['searchable'] ?? null,
+            ];
+            $this->incrementCompteur();
+        }
+        $this->setColumns($return);
+    }
+
+    /**
+     * @return int
+     */
+    public function getCompteur(): int
+    {
+        return $this->compteur;
+    }
+
+    /**
+     * @param int $compteur
+     */
+    public function setCompteur(int $compteur): void
+    {
+        $this->compteur = $compteur;
+    }
+
+    public function incrementCompteur(): void
+    {
+        $this->compteur++;
     }
 
 }

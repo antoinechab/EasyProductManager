@@ -4,6 +4,12 @@ namespace EasyProductManager\Controller;
 
 use EasyProductManager\EasyProductManager;
 use EasyProductManager\Events\DataTableAddColumn;
+use EasyProductManager\Events\DataTableColumnData;
+use ProductStatus\Model\Map\ProductProductStatusTableMap;
+use ProductStatus\Model\Map\ProductStatusTableMap;
+use ProductStatus\Model\ProductProductStatus;
+use ProductStatus\Model\ProductProductStatusQuery;
+use ProductStatus\Model\ProductStatusQuery;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
@@ -60,8 +66,8 @@ class BackController extends ProductController
             return $response;
         }
 
-        //todo l'event qui permet d'ajouter une colonne (nom + rang)
-        $eventColumn = new DataTableAddColumn([]);
+        $eventColumn = new DataTableAddColumn();
+        $eventColumn->setCompteur(8);
         $this->getDispatcher()->dispatch(DataTableAddColumn::PRODUCT_DATATABLE_ADD_COLUMN,$eventColumn);
 
         if ($request->isXmlHttpRequest()) {
@@ -70,11 +76,16 @@ class BackController extends ProductController
 
             $query = ProductQuery::create();
 
+            $eventDataColumn = new DataTableColumnData();
+            $eventDataColumn->setQuery($query);
+            $eventDataColumn->setRequest($request);
+            $this->getDispatcher()->dispatch(DataTableColumnData::PRODUCT_DATATABLE_COLUMN_ADD_DATA,$eventDataColumn);
+
             // Jointure i18n
             $query->useProductI18nQuery()
                 ->filterByLocale($lang->getLocale())
-                ->endUse()
-                ->withColumn(ProductI18nTableMap::TITLE, 'product_i18n_TITLE');
+                ->withColumn(ProductI18nTableMap::TITLE, 'product_i18n_TITLE')
+                ->endUse();
 
             // Jointure product sale element
             $query->useProductSaleElementsQuery('pse_price')
@@ -114,8 +125,6 @@ class BackController extends ProductController
                 ->withColumn('quantitySubQuery.quantity', 'quantity')
                 ->where('quantitySubQuery.product_id = ' . ProductTableMap::ID)
             ;
-
-            //todo event qui permet de récupérer les data de la colonne
 
             // Jointure product sale element
             $query->useProductSaleElementsQuery()
@@ -168,8 +177,11 @@ class BackController extends ProductController
             $moneyFormat = MoneyFormat::getInstance($request);
             $taxCalculator = new Calculator();
 
+            //call_user_func('callBackTest');
+
             /** @var Product $product */
             foreach ($products as $product) {
+
                 $image = ProductImageQuery::create()
                     ->filterByVisible(true)
                     ->filterByProductId($product->getId())
@@ -256,8 +268,10 @@ class BackController extends ProductController
         }
 
         return $this->render('EasyProductManager/list', [
-            'columnsDefinition' => $this->defineColumnsDefinition(),
-            'currencySymbol' => $request->getSession()->getAdminEditionCurrency()->getSymbol()
+            'columnsDefinition' => $this->defineColumnsDefinition(false,$eventColumn->getColumns()??[]),
+            'currencySymbol' => $request->getSession()->getAdminEditionCurrency()->getSymbol(),
+            'compteur'=> $eventColumn->getCompteur(),
+            'newCol' => $eventColumn->getNewColumns()>0 ? 'true' : 'false'
         ]);
     }
 
@@ -422,7 +436,7 @@ class BackController extends ProductController
      * @param bool $withPrivateData
      * @return array
      */
-    protected function defineColumnsDefinition($withPrivateData = false)
+    protected function defineColumnsDefinition($withPrivateData = false, array $columnSupplementaire = [])
     {
         $i = -1;
 
@@ -489,15 +503,30 @@ class BackController extends ProductController
                 'orm' => ProductTableMap::VISIBLE,
                 'title' => 'En ligne',
                 'searchable' => false
-            ],
+            ]
+        ];
+
+        if (count($columnSupplementaire)>0){
+            foreach ($columnSupplementaire as $column){
+                $currentI=++$i;
+                $definitions[] = [
+                    'name' => $column['name'] ?? 'column-'.$currentI,
+                    'targets' => $currentI,
+                    'title' => $column['title'] ?? 'column-'.$currentI,
+                    'orderable' => $column['orderable'] ?? false,
+                    'searchable' => $column['searchable'] ?? false
+                ];
+            }
+        }
+
+        $definitions[] =
             [
                 'name' => 'action',
                 'targets' => ++$i,
                 'title' => 'Action',
                 'orderable' => false,
                 'searchable' => false
-            ]
-        ];
+            ];
 
         if (!$withPrivateData) {
             foreach ($definitions as &$definition) {
@@ -548,4 +577,5 @@ class BackController extends ProductController
     {
         return (string) $request->get('search')['value'];
     }
+
 }
