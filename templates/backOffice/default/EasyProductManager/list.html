@@ -315,14 +315,7 @@
             var compteur = {$compteur};
             var newCol = {$newCol};
             var columnDefs = {$columnsDefinition|@json_encode nofilter};
-
-            var getCompteur = () => {
-                if (compteur <= 0){
-                    return compteur
-                }
-
-                return {$compteur+1}
-            }
+            var getCompteur = (compteur <= 0) ? compteur : {$compteur+1};
 
             columnDefs = columnDefs.concat([
                 {
@@ -408,21 +401,28 @@
             ])
 
             if (newCol){
-                {*todo boucle ajout colonne*}
-                columnDefs = columnDefs.concat( [
-                    {
-                        targets: getInterval(9,{$compteur}),
-                        render: function (data, type, row, meta) {
-                            return '<a href="' + row[9] + '">' + data + '</a>'
+                for (let i = 9; i <= compteur; i++) {
+                    columnDefs = columnDefs.concat( [
+                        {
+                            className: "text-center",
+                            targets: i,
+                            render: function ( data, type, row, meta ) {
+                                let isArray = data instanceof Array;
+                                let href = isArray ? data[0] : row[9];
+                                let thisData = isArray ? data[1] : row[i];
+
+                                return '<a href="' + href + '">' + thisData + '</a>'
+                            },
+                            responsivePriority: 3
                         }
-                    }
-                ])
+                    ])
+                }
             }
 
             columnDefs = columnDefs.concat([
                 {
                     className: "text-right",
-                    targets: getCompteur(),
+                    targets: getCompteur,
                     render: function ( data, type, row, meta ) {
                         return '<a href="' + data + '" class="btn btn-primary" title="Voir">' +
                             '<i class="glyphicon glyphicon-eye-open"></i>' +

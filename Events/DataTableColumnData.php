@@ -21,6 +21,11 @@ class DataTableColumnData extends ActionEvent
      */
     private $request;
 
+    /**
+     * @var array
+     */
+    private $dataTableJson = [];
+
     public function __construct()
     {
     }
@@ -57,9 +62,9 @@ class DataTableColumnData extends ActionEvent
         $this->newColumns = $newColumns;
     }
 
-    public function addNewColumn(array $newColumn): void
+    public function addNewColumn(string $key, array $newColumn): void
     {
-        $this->newColumns[] = $newColumn;
+        $this->newColumns[$key] = $newColumn;
     }
 
     /**
@@ -76,6 +81,31 @@ class DataTableColumnData extends ActionEvent
     public function setRequest(Request $request): void
     {
         $this->request = $request;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataTableJson(): array
+    {
+        return $this->dataTableJson;
+    }
+
+    /**
+     * @param array $dataTableJson
+     */
+    public function setDataTableJson(array $dataTableJson): void
+    {
+        $this->dataTableJson = $dataTableJson;
+    }
+
+    /**
+     * @param mixed $dataTableJson
+     */
+    public function addDataTableJson($dataTableJson): array
+    {
+        $this->dataTableJson[] = $dataTableJson;
+        return $this->dataTableJson;
     }
 
 }

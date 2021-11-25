@@ -76,11 +76,6 @@ class BackController extends ProductController
 
             $query = ProductQuery::create();
 
-            $eventDataColumn = new DataTableColumnData();
-            $eventDataColumn->setQuery($query);
-            $eventDataColumn->setRequest($request);
-            $this->getDispatcher()->dispatch(DataTableColumnData::PRODUCT_DATATABLE_COLUMN_ADD_DATA,$eventDataColumn);
-
             // Jointure i18n
             $query->useProductI18nQuery()
                 ->filterByLocale($lang->getLocale())
@@ -177,10 +172,13 @@ class BackController extends ProductController
             $moneyFormat = MoneyFormat::getInstance($request);
             $taxCalculator = new Calculator();
 
-            //call_user_func('callBackTest');
+            $eventDataColumn = new DataTableColumnData();
+            $eventDataColumn->setQuery($query);
+            $eventDataColumn->setRequest($request);
+            $this->getDispatcher()->dispatch(DataTableColumnData::PRODUCT_DATATABLE_COLUMN_ADD_DATA,$eventDataColumn);
 
             /** @var Product $product */
-            foreach ($products as $product) {
+            foreach ($products as $key=>$product) {
 
                 $image = ProductImageQuery::create()
                     ->filterByVisible(true)
@@ -257,11 +255,16 @@ class BackController extends ProductController
                     [$promoPrice, $promoTaxedPrice, $product->hasVirtualColumn('is_promo') ? $product->getVirtualColumn('is_promo') : 0],
                     $product->getVirtualColumn('quantity'),
                     $product->hasVirtualColumn('productPosition') ? $product->getVirtualColumn('productPosition') : 0,
-                    $product->getVisible(),
+                    $product->getVisible()
+                ];
+
+                $json['data'][$key] = array_merge($json['data'][0],$eventDataColumn->getDataTableJson());
+
+                $json['data'][$key] = array_merge($json['data'][0],[
                     $this->getRoute('admin.products.update', [
                         'product_id' => $product->getId()
                     ])
-                ];
+                ]);
             }
 
             return new JsonResponse($json);
