@@ -246,7 +246,7 @@ class BackController extends ProductController
                     $currency->getId()
                 );
 
-                $json['data'][] = [
+                $json['data'][$key] = [
                     $product->getId(),
                     $imageUrl,
                     $product->getRef(),
@@ -258,9 +258,13 @@ class BackController extends ProductController
                     $product->getVisible()
                 ];
 
-                $json['data'][$key] = array_merge($json['data'][0],$eventDataColumn->getDataTableJson());
+                $data = count($eventDataColumn->getDataTableJson()) > 0 ? $eventDataColumn->getDataTableJson()[$product->getId()] : [];
+                if (null!==$data && !is_array($data)){
+                    $data = [$data];
+                }
+                $json['data'][$key] = array_merge($json['data'][$key],$data);
 
-                $json['data'][$key] = array_merge($json['data'][0],[
+                $json['data'][$key] = array_merge($json['data'][$key],[
                     $this->getRoute('admin.products.update', [
                         'product_id' => $product->getId()
                     ])

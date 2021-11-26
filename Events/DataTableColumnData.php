@@ -102,9 +102,9 @@ class DataTableColumnData extends ActionEvent
     /**
      * @param mixed $dataTableJson
      */
-    public function addDataTableJson($dataTableJson): array
+    public function addDataTableJson($key,$dataTableJson): array
     {
-        $this->dataTableJson[] = $dataTableJson;
+        $this->dataTableJson[$key] = $dataTableJson;
         return $this->dataTableJson;
     }
 
