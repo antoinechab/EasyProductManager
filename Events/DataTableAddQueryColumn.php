@@ -4,17 +4,25 @@ namespace EasyProductManager\Events;
 
 use Thelia\Core\Event\ActionEvent;
 
-class DataTableAddColumn extends ActionEvent
+class DataTableAddQueryColumn extends ActionEvent
 {
-    public const PRODUCT_DATATABLE_ADD_COLUMN = "product.manager.add.column";
+    public const PRODUCT_DATATABLE_ADD_QUERY_COLUMN = "product.manager.add.column";
 
     /**
      * @var array
      */
     private $columns;
 
+    /** @var int $initialCompteur */
+    private $initialCompteur = 8;
+
     /** @var int $compteur */
-    private $compteur = 3;
+    private $compteur = 8;
+
+    /**
+     * @var mixed
+     */
+    private $query;
 
     public function __construct()
     {
@@ -54,6 +62,7 @@ class DataTableAddColumn extends ActionEvent
     {
         $this->columns[] = $column;
         $return = [] ;
+        $this->setCompteur($this->getInitialCompteur()+count($this->getColumns()));
         foreach ($this->getColumns() as $key=>$data){
             $name = $data['title'] ? trim(strtolower($data['title'])) : null;
             $return[$name??$key] = [
@@ -62,7 +71,6 @@ class DataTableAddColumn extends ActionEvent
                 'orderable'=> $data['orderable'] ?? null,
                 'searchable'=> $data['searchable'] ?? null,
             ];
-            $this->incrementCompteur();
         }
         $this->setColumns($return);
     }
@@ -88,4 +96,35 @@ class DataTableAddColumn extends ActionEvent
         $this->compteur++;
     }
 
+    /**
+     * @return int
+     */
+    public function getInitialCompteur(): int
+    {
+        return $this->initialCompteur;
+    }
+
+    /**
+     * @param int $initialCompteur
+     */
+    public function setInitialCompteur(int $initialCompteur): void
+    {
+        $this->initialCompteur = $initialCompteur;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
+
+    /**
+     * @param mixed $query
+     */
+    public function setQuery($query): void
+    {
+        $this->query = $query;
+    }
 }

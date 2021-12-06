@@ -3,7 +3,7 @@
 namespace EasyProductManager\Controller;
 
 use EasyProductManager\EasyProductManager;
-use EasyProductManager\Events\DataTableAddColumn;
+use EasyProductManager\Events\DataTableAddQueryColumn;
 use EasyProductManager\Events\DataTableColumnData;
 use ProductStatus\Model\Map\ProductProductStatusTableMap;
 use ProductStatus\Model\Map\ProductStatusTableMap;
@@ -66,15 +66,16 @@ class BackController extends ProductController
             return $response;
         }
 
-        $eventColumn = new DataTableAddColumn();
-        $eventColumn->setCompteur(8);
-        $this->getDispatcher()->dispatch(DataTableAddColumn::PRODUCT_DATATABLE_ADD_COLUMN,$eventColumn);
+        $query = ProductQuery::create();
+
+        $eventColumn = new DataTableAddQueryColumn();
+        $eventColumn->setInitialCompteur(8);
+        $eventColumn->setQuery($query);
+        $this->getDispatcher()->dispatch(DataTableAddQueryColumn::PRODUCT_DATATABLE_ADD_QUERY_COLUMN,$eventColumn);
 
         if ($request->isXmlHttpRequest()) {
             /** @var Lang $lang */
             $lang = $this->getLang($request);
-
-            $query = ProductQuery::create();
 
             // Jointure i18n
             $query->useProductI18nQuery()
@@ -172,11 +173,6 @@ class BackController extends ProductController
             $moneyFormat = MoneyFormat::getInstance($request);
             $taxCalculator = new Calculator();
 
-            $eventDataColumn = new DataTableColumnData();
-            $eventDataColumn->setQuery($query);
-            $eventDataColumn->setRequest($request);
-            $this->getDispatcher()->dispatch(DataTableColumnData::PRODUCT_DATATABLE_COLUMN_ADD_DATA,$eventDataColumn);
-
             /** @var Product $product */
             foreach ($products as $key=>$product) {
 
@@ -246,6 +242,10 @@ class BackController extends ProductController
                     $currency->getId()
                 );
 
+                $eventDataColumn = new DataTableColumnData();
+                $eventDataColumn->setObject($product);
+                $this->getDispatcher()->dispatch(DataTableColumnData::PRODUCT_DATATABLE_COLUMN_ADD_DATA,$eventDataColumn);
+
                 $json['data'][$key] = [
                     $product->getId(),
                     $imageUrl,
@@ -258,6 +258,7 @@ class BackController extends ProductController
                     $product->getVisible()
                 ];
 
+                $test = $eventDataColumn->getDataTableJson();
                 $data = count($eventDataColumn->getDataTableJson()) > 0 ? $eventDataColumn->getDataTableJson()[$product->getId()] : [];
                 if (null!==$data && !is_array($data)){
                     $data = [$data];
@@ -277,6 +278,7 @@ class BackController extends ProductController
         return $this->render('EasyProductManager/list', [
             'columnsDefinition' => $this->defineColumnsDefinition(false,$eventColumn->getColumns()??[]),
             'currencySymbol' => $request->getSession()->getAdminEditionCurrency()->getSymbol(),
+            'initalCompteur'=> $eventColumn->getInitialCompteur(),
             'compteur'=> $eventColumn->getCompteur(),
             'newCol' => $eventColumn->getNewColumns()>0 ? 'true' : 'false'
         ]);

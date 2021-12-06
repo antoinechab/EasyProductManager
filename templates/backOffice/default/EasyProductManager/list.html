@@ -312,10 +312,11 @@
                 return Array(end - start + 1).fill().map((_, idx) => start + idx)
             }
 
+            var initalCompteur = {$initalCompteur+1};
             var compteur = {$compteur};
             var newCol = {$newCol};
             var columnDefs = {$columnsDefinition|@json_encode nofilter};
-            var getCompteur = (compteur <= 0) ? compteur : {$compteur+1};
+            var getCompteur = (compteur <= 0) ? initalCompteur : compteur+1;
 
             columnDefs = columnDefs.concat([
                 {
@@ -401,7 +402,7 @@
             ])
 
             if (newCol){
-                for (let i = 9; i <= compteur; i++) {
+                for (let i = initalCompteur; i <= compteur; i++) {
                     columnDefs = columnDefs.concat( [
                         {
                             className: "text-center",
@@ -415,7 +416,7 @@
                             },
                             responsivePriority: 3
                         }
-                    ])
+                    ]);
                 }
             }
 

@@ -9,41 +9,20 @@ class DataTableColumnData extends ActionEvent
 {
     public const PRODUCT_DATATABLE_COLUMN_ADD_DATA = "product.manager.column.add.data";
 
-    private $query;
-
     /**
      * @var array $newColumns
      */
     private $newColumns = [];
 
     /**
-     * @var Request
-     */
-    private $request;
-
-    /**
      * @var array
      */
     private $dataTableJson = [];
 
+    private $object;
+
     public function __construct()
     {
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * @param mixed $query
-     */
-    public function setQuery($query): void
-    {
-        $this->query = $query;
     }
 
     /**
@@ -68,22 +47,6 @@ class DataTableColumnData extends ActionEvent
     }
 
     /**
-     * @return Request
-     */
-    public function getRequest(): Request
-    {
-        return $this->request;
-    }
-
-    /**
-     * @param Request $request
-     */
-    public function setRequest(Request $request): void
-    {
-        $this->request = $request;
-    }
-
-    /**
      * @return array
      */
     public function getDataTableJson(): array
@@ -104,8 +67,24 @@ class DataTableColumnData extends ActionEvent
      */
     public function addDataTableJson($key,$dataTableJson): array
     {
-        $this->dataTableJson[$key] = $dataTableJson;
+        $this->dataTableJson[$key][] = $dataTableJson;
         return $this->dataTableJson;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getObject()
+    {
+        return $this->object;
+    }
+
+    /**
+     * @param mixed $object
+     */
+    public function setObject($object): void
+    {
+        $this->object = $object;
     }
 
 }
