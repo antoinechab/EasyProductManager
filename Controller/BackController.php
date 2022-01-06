@@ -13,8 +13,13 @@ use ProductStatus\Model\ProductStatusQuery;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Csrf\TokenGenerator\UriSafeTokenGenerator;
+use Symfony\Component\Security\Csrf\TokenStorage\NativeSessionTokenStorage;
 use Thelia\Controller\Admin\ProductController;
 use Thelia\Core\Event\Image\ImageEvent;
 use Thelia\Core\Event\TheliaEvents;
@@ -258,7 +263,6 @@ class BackController extends ProductController
                     $product->getVisible()
                 ];
 
-                $test = $eventDataColumn->getDataTableJson();
                 $data = count($eventDataColumn->getDataTableJson()) > 0 ? $eventDataColumn->getDataTableJson()[$product->getId()] : [];
                 if (null!==$data && !is_array($data)){
                     $data = [$data];
@@ -275,13 +279,54 @@ class BackController extends ProductController
             return new JsonResponse($json);
         }
 
-        return $this->render('EasyProductManager/list', [
+        $dataRender = [
             'columnsDefinition' => $this->defineColumnsDefinition(false,$eventColumn->getColumns()??[]),
             'currencySymbol' => $request->getSession()->getAdminEditionCurrency()->getSymbol(),
             'initalCompteur'=> $eventColumn->getInitialCompteur(),
             'compteur'=> $eventColumn->getCompteur(),
-            'newCol' => $eventColumn->getNewColumns()>0 ? 'true' : 'false'
-        ]);
+            'newCol' => $eventColumn->getNewColumns()>0 ? 'true' : 'false',
+        ];
+
+        $validationFormsLabel = [];
+        $validationFormsToken = '';
+        if ($forms = $eventColumn->getValidationForm()){
+            foreach ($forms as $form){
+                $currentForm = $this->createForm($form['name'],"form",$form['data']??[]);
+                $token = $this->getToken($currentForm->getName())->getValue();
+                $dataRender[$form['label']] = $currentForm->createView();
+                $validationFormsLabel[] = $form['label'];
+                $validationFormsToken = $token;
+            }
+            $dataRender['validationForm'] = $validationFormsLabel;
+            $dataRender['token'] = $validationFormsToken;
+        }
+
+        return $this->render('EasyProductManager/list', $dataRender);
+    }
+
+    protected $namespace;
+    protected function getToken($formName){
+        $superGlobalNamespaceGenerator = function () {
+            return !empty($_SERVER['HTTPS']) && 'off' !== strtolower($_SERVER['HTTPS']) ? 'https-' : '';
+        };
+        $this->namespace = $superGlobalNamespaceGenerator;
+        $namespacedId = $this->getNamespace().$formName;
+
+        $storage = new NativeSessionTokenStorage();
+        $generator = new UriSafeTokenGenerator();
+        if ($storage->hasToken($namespacedId)){
+            $value = $storage->getToken($namespacedId);
+        }else{
+            $value = $generator->generateToken();
+            $storage->setToken($namespacedId, $value);
+        }
+
+        return new CsrfToken($formName, $value);
+    }
+
+    private function getNamespace()
+    {
+        return \is_callable($ns = $this->namespace) ? $ns() : $ns;
     }
 
     protected function filterByCategory(Request $request, ProductQuery $query)

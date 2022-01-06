@@ -24,6 +24,11 @@ class DataTableAddQueryColumn extends ActionEvent
      */
     private $query;
 
+    /**
+     * @var array
+     */
+    private $validationForm = [];
+
     public function __construct()
     {
     }
@@ -126,5 +131,18 @@ class DataTableAddQueryColumn extends ActionEvent
     public function setQuery($query): void
     {
         $this->query = $query;
+    }
+
+    /**
+     * @return array
+     */
+    public function getValidationForm() : array
+    {
+        return $this->validationForm;
+    }
+
+    public function setValidationForm($validationForm): void
+    {
+        $this->validationForm[] = $validationForm;
     }
 }

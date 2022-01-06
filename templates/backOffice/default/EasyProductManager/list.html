@@ -278,6 +278,7 @@
     }
 
     </div>
+
 {/block}
 
 {block name="javascript-last-call"}
@@ -327,7 +328,7 @@
                     className: "text-center",
                     targets: 1,
                     render: function ( data, type, row, meta ) {
-                        var href = row[9] + '&current_tab=images';
+                        var href = row[getCompteur] + '&current_tab=images';
 
                         if (data !== '') {
                             return '<a href="' + href + '"><img src="' + data + '" style="width: 50px; height: 50px;" /></a>'
@@ -339,7 +340,7 @@
                 {
                     targets: [0, 2, 3],
                     render: function ( data, type, row, meta ) {
-                        return '<a href="' + row[9] + '">' + data + '</a>'
+                        return '<a href="' + row[getCompteur] + '">' + data + '</a>'
                     }
                 },
                 {
@@ -409,10 +410,52 @@
                             targets: i,
                             render: function ( data, type, row, meta ) {
                                 let isArray = data instanceof Array;
-                                let href = isArray ? data[0] : row[9];
-                                let thisData = isArray ? data[1] : row[i];
+                                let thisData =  row[i];
+                                let href =  row[getCompteur];
+                                let render =  row[i];
 
-                                return '<a href="' + href + '">' + thisData + '</a>'
+                                // console.log(data,type,row,meta)
+
+                                if (isArray){
+                                    thisData = data[0] !== '' ? data[0] : row[i];
+                                    href = data[1] !== '' ? data[1] : row[getCompteur];
+                                    render = data[2] !== '' ? data[2] : row[i];
+                                }
+
+                                switch (render){
+                                    case 'list':
+                                        let listOptions =  data[3];
+                                        let returnListString = '<form class="form-horizontal" role="form" id="order-update-status-form-'+ row[0] + '" action="' + data[4] +'" method="post">' +
+                                        '<div class="form-group">' +
+                                        '<select class="js-action-'+getCompteur+' js-update-order-status" data-order-id="'+ row[0]+'" name="status_id">';
+                                        for (const [key, value] of Object.entries(listOptions)) {
+                                            returnListString += '<option ' + (thisData === value ? 'selected' : '') + ' value="'+key+'">'+value+'</option>';
+                                        }
+                                        returnListString += '</select>' +
+                                        '</div>' +
+                                        '</form>';
+                                        return returnListString;
+
+                                    case 'image':
+
+                                        let imageOptions = data[3];
+                                        var imageHref = row[getCompteur] + '&current_tab=images';
+                                        if (imageOptions[1] !== '') {
+                                            return '<a href="' + imageHref + '"><img src="' + imageOptions[2] + '" style="width: 50px; height: 50px;" /></a>'
+                                        }
+                                        return '<a href="' + href + '" style="line-height:50px;text-align:center;width: 50px; height: 50px;">Aucune</a>';
+                                    case 'buttons':
+                                        let buttonOptions = data[3];
+                                        let returnButtonString = '';
+                                        for (const [key, value] of Object.entries(buttonOptions)) {
+                                            returnButtonString = '<a href="'+value[0]+'" class="'+value[1]+'" title="'+value[2]+'">';
+                                            returnButtonString = '<i class="'+value[3]+'"></i>';
+                                            returnButtonString = '</a>';
+                                        }
+                                        return returnButtonString;
+                                    default:
+                                        return '<a href="' + href + '">' + thisData + '</a>'
+                                }
                             },
                             responsivePriority: 3
                         }
@@ -633,6 +676,25 @@
 
                 table.ajax.reload(null, false);
             });
+
+            table.on('change', '.js-update-order-status', function(e){
+                e.preventDefault();
+                var $form = $('#order-update-status-form-' + $(this).data("order-id"));
+                var form_url = $form.attr("action");
+                var form_method = $form.attr("method");
+                var form_data = $form.serialize();
+
+                $.ajax({
+                    url : form_url,
+                    type: form_method,
+                    data : form_data
+                }).done(function(response){
+                    $("#res").html(response);
+                    table.ajax.reload(null, false);
+                });
+
+            });
+
 
             table.on('click', '.js-action-position-up', function(event){
                 event.preventDefault();
